@@ -8,7 +8,6 @@ class Data(object):
         self.__num = 0
         self.__current_data = None
         self.__future_data = None
-        self.refresh()
 
     def __get_current_data(self) -> bool:
         if len(self.__config['citys']) == 0:
