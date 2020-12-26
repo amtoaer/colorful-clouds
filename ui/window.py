@@ -1,5 +1,7 @@
+from dao.data import Data
+from helper.utils import get_images
 import tkinter
-from tkinter import Button, Frame
+from tkinter import Button, Label
 
 
 class Window(tkinter.Tk):
@@ -9,21 +11,58 @@ class Window(tkinter.Tk):
         super().__init__()
         self.title('天气预报')
         self.geometry('800x600')
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+        # 按钮
+        self.help = Button(self, text='帮助')
+        self.setting = Button(self, text='设置')
+        self.refresh = Button(self, text="刷新")
+        # 数据源
+        self.dao = Data()
+        self.images = get_images()
+        # Label
+        self.current_weather_text = tkinter.StringVar()
+        self.current_weather_label = Label(image=None)
+        self.future_weather_labels = [Label(image=None) for _ in range(7)]
 
     def __draw(self):
-        top_frame = Frame(self, height=80)
-        self.help = Button(top_frame, text='帮助')
-        self.setting = Button(top_frame, text='设置')
-        self.refresh = Button(top_frame, text="刷新")
-        self.help.pack(side='right', padx=20, pady=20)
-        self.setting.pack(side='right', pady=20)
-        self.refresh.pack(side='right', padx=20, pady=20)
-        top_frame.pack(fill='x', side='top')
-        bottom_frame = Frame(self)
-        bottom_frame.pack(fill='both', side='bottom')
+        # Label充当占位符
+        Label(self).grid(row=0, column=0, columnspan=6, sticky='NS')
+        self.refresh.grid(row=0, column=7, sticky='NS', padx=20, pady=20)
+        self.setting.grid(row=0, column=8, sticky='NS', pady=20)
+        self.help.grid(row=0, column=9, sticky='NS', padx=20, pady=20)
+        self.current_weather_label.grid(
+            row=1, column=0, rowspan=2, columnspan=7)
+        Label(textvariable=self.current_weather_text).grid(
+            row=1, column=8, columnspan=7)
+        for i in range(7):
+            self.future_weather_labels[i].grid(row=2, column=7+i)
 
     def __bind_event(self):
         pass
+
+    def __refresh(self):
+        success = self.dao.refresh()
+        if not success:
+            print('更新数据失败，请手动点击刷新按钮重试')
+            return
+        current_data = self.dao.get_current_data()
+        future_data = self.dao.get_future_data()
+        self.current_weather_label.configure(
+            image=self.images[current_data['wea_img']])
+        self.current_weather_text.set('''
+        城市：{}
+        天气：{}
+        温度：{}°C
+        最高温度：{}°C
+        最低温度：{}°C
+        风向：{}
+        风速：{}
+        pm2.5：{}
+        空气质量：{}'''.format(current_data['city'], current_data['wea'], current_data['tem'], current_data['tem1'], current_data['tem2'], current_data['win'], current_data['win_speed'], current_data['air_pm25'], current_data['air_level']))
+        for i in range(7):
+            self.future_weather_labels[i].configure(
+                image=self.images[future_data['data'][i]['wea_img']])
 
     def __show(self):
         self.mainloop()
@@ -31,4 +70,5 @@ class Window(tkinter.Tk):
     def run(self):
         self.__draw()
         self.__bind_event()
+        self.__refresh()
         self.__show()
