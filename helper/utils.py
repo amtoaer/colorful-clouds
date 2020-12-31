@@ -1,6 +1,7 @@
 import json
 import os
-import tkinter
+from PIL.ImageTk import PhotoImage
+from PIL import Image
 
 
 def read_config() -> dict:
@@ -20,7 +21,9 @@ def increase(current: int, len: int) -> int:
 
 def get_images() -> dict:
     result = dict()
-    for image in os.listdir('./img'):
-        result[image.split('.')[0]] = tkinter.PhotoImage(
-            file='./img/{}'.format(image))
+    for filename in os.listdir('./img'):
+        image = Image.open('./img/{}'.format(filename))
+        weather = filename.split('.')[0]
+        result[weather] = [PhotoImage(image), PhotoImage(
+            image.resize((40, 40), Image.ANTIALIAS))]
     return result
