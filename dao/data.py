@@ -1,4 +1,4 @@
-from helper.utils import read_config, increase
+from helper.utils import read_config
 import requests
 
 
@@ -14,7 +14,7 @@ class Data(object):
             return False
         try:
             resp = requests.get(
-                'https://tianqiapi.com/api?version=v6&appid={0}&appsecret={1}&city={2}'.format(self.__config['id'], self.__config['secret'], self.__config['citys'][self.__num]['city']))
+                'https://tianqiapi.com/api?version=v6&appid={0}&appsecret={1}&city={2}'.format(self.__config['id'], self.__config['secret'], self.__config['citys'][self.__num]))
             self.__current_data = resp.json()
             return True
         except:
@@ -25,7 +25,7 @@ class Data(object):
             return False
         try:
             resp = requests.get(
-                'https://tianqiapi.com/api?version=v1&appid={0}&appsecret={1}&city={2}'.format(self.__config['id'], self.__config['secret'], self.__config['citys'][self.__num]['city']))
+                'https://tianqiapi.com/api?version=v1&appid={0}&appsecret={1}&city={2}'.format(self.__config['id'], self.__config['secret'], self.__config['citys'][self.__num]))
             self.__future_data = resp.json()
             return True
         except:
@@ -36,9 +36,8 @@ class Data(object):
         future = self.__get_future_data()
         return current and future
 
-    def increase(self) -> bool:
-        self.__num = increase(self.__num, len(self.__config['citys']))
-        return self.refresh()
+    def increase(self) -> None:
+        self.__num = (self.__num+1) % len(self.__config['citys'])
 
     def get_current_data(self) -> dict:
         return self.__current_data
