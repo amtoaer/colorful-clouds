@@ -1,4 +1,5 @@
 from tkinter.constants import TOP
+from ui.config import Config
 from dao.data import Data
 from helper.utils import get_images
 import tkinter
@@ -52,21 +53,26 @@ class Window(tkinter.Tk):
         self.bottom_frame.grid(row=1, column=0, sticky='WE')
 
     def __bind_event(self):
-        self.refresh.configure(command=self.__refresh_in_thread)
+        self.refresh.configure(command=self.refresh_in_thread)
         self.next.configure(command=self.__next)
+        self.setting.configure(command=self.__setting)
 
     def __next(self):
         self.dao.increase()
-        self.__refresh_in_thread()
+        self.refresh_in_thread()
 
-    def __refresh_in_thread(self):
+    def refresh_in_thread(self):
         threading.Thread(target=self.__refresh).start()
 
-    def __refresh(self):
+    def __setting(self):
+        config = self.dao.get_config()
+        Config(config, self)
+
+    def __refresh(self) -> bool:
         success = self.dao.refresh()
         if not success:
-            print('更新数据失败，请手动点击刷新按钮重试')
-            return
+            print('更新数据失败，可能因为城市列表为空或网络错误，请修正错误后重试')
+            return False
         current_data = self.dao.get_current_data()
         future_data = self.dao.get_future_data()
         self.current_weather_label.configure(
@@ -83,6 +89,7 @@ class Window(tkinter.Tk):
                 '{}~{}'.format(data['tem2'], data['tem1']))
             self.future_weather_labels[i].configure(
                 image=self.images[data['wea_img']][1])
+        return True
 
     def __show(self):
         self.mainloop()
@@ -90,5 +97,6 @@ class Window(tkinter.Tk):
     def run(self):
         self.__draw()
         self.__bind_event()
-        self.__refresh()
-        self.__show()
+        first_refresh_success = self.__refresh()
+        if first_refresh_success:
+            self.__show()

@@ -9,6 +9,12 @@ class Data(object):
         self.__current_data = None
         self.__future_data = None
 
+    def re_init(self):
+        self.__init__()
+
+    def get_config(self) -> dict:
+        return self.__config
+
     def __get_current_data(self) -> bool:
         if len(self.__config['citys']) == 0:
             return False
