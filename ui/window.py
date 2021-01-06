@@ -16,6 +16,7 @@ class Window(tkinter.Tk):
         self.resizable(width=0, height=0)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
+        self.lock = threading.Lock()
         # Frame
         self.top_frame = Frame(self)
         self.top_frame.columnconfigure(0, weight=1)
@@ -69,27 +70,31 @@ class Window(tkinter.Tk):
         Config(config, self)
 
     def __refresh(self) -> bool:
-        success = self.dao.refresh()
-        if not success:
-            print('更新数据失败，可能因为城市列表为空或网络错误，请修正错误后重试')
-            return False
-        current_data = self.dao.get_current_data()
-        future_data = self.dao.get_future_data()
-        self.current_weather_label.configure(
-            image=self.images[current_data['wea_img']][0])
-        self.current_weather_text.set('''
-        城市：{}    天气：{}
-        温度：{}°C  最高温度：{}°C
-        最低温度：{}°C  风向：{}
-        风速：{}    pm2.5：{}
-        空气质量：{}'''.format(current_data['city'], current_data['wea'], current_data['tem'], current_data['tem1'], current_data['tem2'], current_data['win'], current_data['win_speed'], current_data['air_pm25'], current_data['air_level']))
-        for i in range(7):
-            data = future_data['data'][i]
-            self.future_temperature_labels[i].set(
-                '{}~{}'.format(data['tem2'], data['tem1']))
-            self.future_weather_labels[i].configure(
-                image=self.images[data['wea_img']][1])
-        return True
+        if self.lock.acquire():
+            try:
+                success = self.dao.refresh()
+                if not success:
+                    print('更新数据失败，可能因为城市列表为空或网络错误，请修正错误后重试')
+                    return False
+                current_data = self.dao.get_current_data()
+                future_data = self.dao.get_future_data()
+                self.current_weather_label.configure(
+                    image=self.images[current_data['wea_img']][0])
+                self.current_weather_text.set('''
+                城市：{}    天气：{}
+                温度：{}°C  最高温度：{}°C
+                最低温度：{}°C  风向：{}
+                风速：{}    pm2.5：{}
+                空气质量：{}'''.format(current_data['city'], current_data['wea'], current_data['tem'], current_data['tem1'], current_data['tem2'], current_data['win'], current_data['win_speed'], current_data['air_pm25'], current_data['air_level']))
+                for i in range(7):
+                    data = future_data['data'][i]
+                    self.future_temperature_labels[i].set(
+                        '{}~{}'.format(data['tem2'], data['tem1']))
+                    self.future_weather_labels[i].configure(
+                        image=self.images[data['wea_img']][1])
+                return True
+            finally:
+                self.lock.release()
 
     def __show(self):
         self.mainloop()
